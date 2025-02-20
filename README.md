@@ -20,4 +20,5 @@ To incorporate this action into your workflow, add the following step to your Gi
   uses: praveenkumar/minp-github-action@main
 ```
 
-
+## Sample Example
+- https://github.com/praveenkumar/simple-go-server/blob/main/.github/workflows/minp.yaml
