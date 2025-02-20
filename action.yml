@@ -1,0 +1,59 @@
+name: 'Run MicroShift in container'
+description: 'Run MicroShift in container using GH action'
+inputs:
+  cache:
+    description: 'enable cache to speed up cluster starts: true or false (default true). '
+    default: 'true'
+runs:
+  using: 'composite'
+  steps:
+    - name: Check runner OS
+      if: ${{ runner.os != 'Linux' }}
+      shell: bash
+      run: |
+        echo "::error title=⛔ error hint::Support Linux Only"
+        exit 1
+
+    - name: Remove unwanted stuff to free up disk image
+      shell: bash
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /usr/local/lib/android
+        sudo rm -rf /opt/ghc
+        sudo rm -rf "/usr/local/share/boost"
+        sudo rm -rf /opt/hostedtoolcache/CodeQL
+ 
+        sudo docker image prune --all --force
+ 
+        sudo swapoff -a
+        sudo rm -f /mnt/swapfile
+
+    - name: Install oc
+      uses: redhat-actions/oc-installer@v1
+
+    - name: Run microshift in container
+      shell: bash
+      run: |
+        arch=$(uname -m)
+        if [ "$arch" = "aarch64" ]; then
+            arch_name="arm64"
+        elif [ "$arch" = "x86_64" ]; then
+            arch_name="amd64"
+        fi
+        echo "Detected architecture: $arch_name"
+        docker run --hostname 127.0.0.1.nip.io --detach --rm -it --privileged -p 80:80 -p 443:443 -p 6443:6443 \
+           -v /var/lib/containers/storage:/host-container:ro,rshared \
+           --name microshift quay.io/praveenkumar/microshift-okd:4.18.0-okd-scos.1-${arch_name}
+        sleep 20
+        docker cp  microshift:/var/lib/microshift/resources/kubeadmin/127.0.0.1.nip.io/kubeconfig .
+        sudo chown $USER:$USER kubeconfig
+        mkdir -p $HOME/.kube
+        cp kubeconfig $HOME/.kube/config
+        sleep 40
+    - name: Wait till all pods are in running state
+      run: |
+        oc get pods -A
+        oc wait --for=condition=Ready pod --all --all-namespaces --timeout=300s
+        oc get pods -A
+
+
