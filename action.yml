@@ -51,9 +51,9 @@ runs:
         cp kubeconfig $HOME/.kube/config
         sleep 40
     - name: Wait till all pods are in running state
+      shell: bash
       run: |
         oc get pods -A
         oc wait --for=condition=Ready pod --all --all-namespaces --timeout=300s
         oc get pods -A
-
 
