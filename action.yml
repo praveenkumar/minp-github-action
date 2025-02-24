@@ -14,20 +14,6 @@ runs:
         echo "::error title=⛔ error hint::Support Linux Only"
         exit 1
 
-    - name: Remove unwanted stuff to free up disk image
-      shell: bash
-      run: |
-        sudo rm -rf /usr/share/dotnet
-        sudo rm -rf /usr/local/lib/android
-        sudo rm -rf /opt/ghc
-        sudo rm -rf "/usr/local/share/boost"
-        sudo rm -rf /opt/hostedtoolcache/CodeQL
- 
-        sudo docker image prune --all --force
- 
-        sudo swapoff -a
-        sudo rm -f /mnt/swapfile
-
     - name: Install oc
       uses: redhat-actions/oc-installer@v1
 
@@ -50,6 +36,7 @@ runs:
         mkdir -p $HOME/.kube
         cp kubeconfig $HOME/.kube/config
         sleep 40
+
     - name: Wait till all pods are in running state
       shell: bash
       run: |
